@@ -370,6 +370,16 @@ class model_galaxy(object):
         if self.nebular:
             grid = np.copy(self.sfh.ceh.grid)
 
+            # adding picket fence fesc
+            if "fesc" in list(model_comp["nebular"]):
+                fesc = model_comp["nebular"]["fesc"]
+                if fesc > 1: # make sure fesc on range 0-1
+                    fesc = 1.0
+                elif fesc < 0:
+                    fesc = 0.0
+            else:
+                fesc = 0.0
+
             if "metallicity" in list(model_comp["nebular"]):
                 nebular_metallicity = model_comp["nebular"]["metallicity"]
                 neb_comp = deepcopy(model_comp)
@@ -380,12 +390,12 @@ class model_galaxy(object):
                 self.neb_sfh.update(neb_comp)
                 grid = self.neb_sfh.ceh.grid
 
-            em_lines += self.nebular.line_fluxes(grid, t_bc,
+            em_lines += (1.0 - fesc) * self.nebular.line_fluxes(grid, t_bc,
                                                  model_comp["nebular"]["logU"])
 
-            # All stellar emission below 912A goes into nebular emission
-            spectrum_bc[self.wavelengths < 912.] = 0.
-            spectrum_bc += self.nebular.spectrum(grid, t_bc,
+            # The non-escaping stellar emission below 912A goes into nebular emission
+            spectrum_bc[self.wavelengths < 912.] *= fesc
+            spectrum_bc += (1.0 - fesc) * self.nebular.spectrum(grid, t_bc,
                                                  model_comp["nebular"]["logU"])
 
         # Add attenuation due to stellar birth clouds.

@@ -18,7 +18,7 @@ negatively affects one or both of these things. """
 """ These variables control the wavelength sampling for models. """
 
 # Sets the maximum redshift the code is set up to calculate models for.
-max_redshift = 10.
+max_redshift = 20.
 
 # Sets the R = lambda/dlambda value for spectroscopic outputs.
 R_spec = 1000.
@@ -57,13 +57,43 @@ sfr_timescale = 10**8  # This is 100 Myr by default
 """ These variables tell the code where to find the raw stellar emission
 models, as well as some of their basic properties. """
 
+# try:
+#     # Name of the fits file storing the stellar models
+#     stellar_file = "bc03_miles_stellar_grids.fits"
+
+#     # The metallicities of the stellar grids in units of Z_Solar
+#     metallicities = np.array([0.005, 0.02, 0.2, 0.4, 1., 2.5, 5.])
+
+#     # The wavelengths of the grid points in Angstroms
+#     wavelengths = fits.open(grid_dir + "/" + stellar_file)[-1].data
+
+#     # The ages of the grid points in Gyr
+#     raw_stellar_ages = fits.open(grid_dir + "/" + stellar_file)[-2].data
+
+#     # The fraction of stellar mass still living (1 - return fraction).
+#     # Axis 0 runs over metallicity, axis 1 runs over age.
+#     live_frac = fits.open(grid_dir + "/" + stellar_file)[-3].data[:, 1:]
+
+#     # The raw stellar grids, stored as a FITS HDUList.
+#     # The different HDUs are the grids at different metallicities.
+#     # Axis 0 of each grid runs over wavelength, axis 1 over age.
+#     raw_stellar_grid = fits.open(grid_dir + "/" + stellar_file)[1:8]
+
+#     # Set up edge positions for metallicity bins for stellar models.
+#     metallicity_bins = make_bins(metallicities, make_rhs=True)[0]
+#     metallicity_bins[0] = 0.
+#     metallicity_bins[-1] = 10.
+
+#BPASS!
 try:
     # Name of the fits file storing the stellar models
-    stellar_file = "bc03_miles_stellar_grids.fits"
+    print('** using BPASS v2.2.1 model grids')
+    stellar_file = "bpass_2.2.1_bin_imf135_300_stellar_grids.fits"
 
     # The metallicities of the stellar grids in units of Z_Solar
-    metallicities = np.array([0.005, 0.02, 0.2, 0.4, 1., 2.5, 5.])
-
+    metallicities = np.array([10**-5, 10**-4, 0.001, 0.002, 0.003, 0.004,
+                              0.006, 0.008, 0.010, 0.014, 0.020, 0.030,
+                              0.040])/0.02
     # The wavelengths of the grid points in Angstroms
     wavelengths = fits.open(grid_dir + "/" + stellar_file)[-1].data
 
@@ -72,17 +102,18 @@ try:
 
     # The fraction of stellar mass still living (1 - return fraction).
     # Axis 0 runs over metallicity, axis 1 runs over age.
-    live_frac = fits.open(grid_dir + "/" + stellar_file)[-3].data[:, 1:]
+    live_frac = fits.open(grid_dir + "/" + stellar_file)[-3].data
 
     # The raw stellar grids, stored as a FITS HDUList.
     # The different HDUs are the grids at different metallicities.
     # Axis 0 of each grid runs over wavelength, axis 1 over age.
-    raw_stellar_grid = fits.open(grid_dir + "/" + stellar_file)[1:8]
+    raw_stellar_grid = fits.open(grid_dir + "/" + stellar_file)[1:14]
 
     # Set up edge positions for metallicity bins for stellar models.
     metallicity_bins = make_bins(metallicities, make_rhs=True)[0]
     metallicity_bins[0] = 0.
     metallicity_bins[-1] = 10.
+
 
 except IOError:
     print("Failed to load stellar grids, these should be placed in"
@@ -94,8 +125,18 @@ models, as well as some of their basic properties. """
 
 try:
     # Names of files containing the nebular grids.
-    neb_cont_file = "bc03_miles_nebular_cont_grids.fits"
-    neb_line_file = "bc03_miles_nebular_line_grids.fits"
+    #neb_cont_file = "bc03_miles_nebular_cont_grids.fits"
+    #neb_line_file = "bc03_miles_nebular_line_grids.fits"
+    # neb_cont_file = "bc03_miles_higherLogU_nebular_cont_grids.fits"
+    # neb_line_file = "bc03_miles_higherLogU_nebular_line_grids.fits"
+
+    # neb_cont_file = "bpass_2.2.1_bin_imf135_300_nebular_cont_grids.fits"
+    # neb_line_file = "bpass_2.2.1_bin_imf135_300_nebular_line_grids.fits"
+    
+    print(' ** using new cloudy grids with no dust, fixes recombination line luminosities at highZ and logU')
+    neb_cont_file = "bpass_2.2.1_bin_imf135_300_nebular_cont_grids_nodust.fits"
+    neb_line_file = "bpass_2.2.1_bin_imf135_300_nebular_line_grids_nodust.fits"
+
 
     # Names for the emission features to be tracked.
     line_names = np.loadtxt(grid_dir + "/cloudy_lines.txt",
@@ -112,7 +153,8 @@ try:
     neb_wavs = fits.open(grid_dir + "/" + neb_cont_file)[1].data[0, 1:]
 
     # LogU values for the nebular emission grids.
-    logU = np.arange(-4., -1.99, 0.5)
+    #logU = np.arange(-4., -1.99, 0.5)
+    logU = np.arange(-4., -0.99, 0.5) ## expand grid up to logU=-1
 
     # Grid of line fluxes.
     line_grid = [fits.open(grid_dir + "/" + neb_line_file)[i].data for

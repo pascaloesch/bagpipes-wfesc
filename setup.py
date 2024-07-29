@@ -11,7 +11,7 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 setup(
     name='bagpipes',
 
-    version='1.1.2',
+    version='1.1.2+wfesc',
 
     description='Galaxy spectral fitting',
 
@@ -19,7 +19,7 @@ setup(
 
     url='https://bagpipes.readthedocs.io',
 
-    author='Adam Carnall',
+    author='Adam Carnall, wfescAddition by P. Oesch',
 
     author_email='adamc@roe.ac.uk',
 
