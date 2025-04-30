@@ -203,8 +203,8 @@ class model_galaxy(object):
                 self.R = [config.R_other, config.R_spec,
                           config.R_phot, config.R_other]
 
-            elif (self.spec_wavs[0] > self.filter_set.min_phot_wav
-                  and self.spec_wavs[-1] > self.filter_set.max_phot_wav):
+            if (self.spec_wavs[0] > self.filter_set.min_phot_wav
+                    and self.spec_wavs[-1] > self.filter_set.max_phot_wav):
 
                 self.max_wavs = [self.filter_set.min_phot_wav/(1.+max_z),
                                  self.spec_wavs[0]/(1.+max_z),
@@ -212,14 +212,6 @@ class model_galaxy(object):
 
                 self.R = [config.R_other, config.R_phot,
                           config.R_spec, config.R_other]
-
-            elif (self.spec_wavs[0] < self.filter_set.min_phot_wav
-                  and self.spec_wavs[-1] > self.filter_set.max_phot_wav):
-
-                self.max_wavs = [self.spec_wavs[0]/(1.+max_z),
-                                 self.spec_wavs[-1], 10**8]
-
-                self.R = [config.R_other, config.R_spec, config.R_other]
 
         # Generate the desired wavelength sampling.
         x = [1.]
@@ -398,12 +390,14 @@ class model_galaxy(object):
                 self.neb_sfh.update(neb_comp)
                 grid = self.neb_sfh.ceh.grid
 
-            em_lines += (1.0 - fesc) * self.nebular.line_fluxes(grid, t_bc,
+            em_lines += self.nebular.line_fluxes(grid, t_bc,
                                                  model_comp["nebular"]["logU"])
 
             # The non-escaping stellar emission below 912A goes into nebular emission
-            spectrum_bc[self.wavelengths < 912.] *= fesc
-            spectrum_bc += (1.0 - fesc) * self.nebular.spectrum(grid, t_bc,
+            spectrum_bc_f100 = 1.0*spectrum_bc
+            
+            spectrum_bc[self.wavelengths < 912.] *= 0.0
+            spectrum_bc += self.nebular.spectrum(grid, t_bc,
                                                  model_comp["nebular"]["logU"])
 
         # Add attenuation due to stellar birth clouds.
@@ -411,7 +405,7 @@ class model_galaxy(object):
             dust_flux = 0.  # Total attenuated flux for energy balance.
 
             # Add extra attenuation to birth clouds.
-            eta = 1.
+
             if "eta" in list(model_comp["dust"]):
                 eta = model_comp["dust"]["eta"]
                 bc_Av_reduced = (eta - 1.)*model_comp["dust"]["Av"]
@@ -421,21 +415,26 @@ class model_galaxy(object):
                                       x=self.wavelengths)
 
                 spectrum_bc = spectrum_bc_dust
-
+            else:
+                eta = 1.
             # Attenuate emission line fluxes.
             bc_Av = eta*model_comp["dust"]["Av"]
             em_lines *= 10**(-bc_Av*self.dust_atten.A_line/2.5)
 
-        spectrum += spectrum_bc  # Add birth cloud spectrum to spectrum.
+        em_lines = em_lines*(1-fesc)  # Add birth cloud emission lines to emission lines.
 
         # Add attenuation due to the diffuse ISM.
         if self.dust_atten:
             trans = 10**(-model_comp["dust"]["Av"]*self.dust_atten.A_cont/2.5)
             dust_spectrum = spectrum*trans
+            dust_spectrum_bc = spectrum_bc*trans
+
             dust_flux += np.trapz(spectrum - dust_spectrum, x=self.wavelengths)
 
-            spectrum = dust_spectrum
+            spectrum = dust_spectrum + dust_spectrum_bc*(1.0-fesc) + spectrum_bc_f100*fesc
+
             self.spectrum_bc = spectrum_bc*trans
+
 
             # Add dust emission.
             qpah, umin, gamma = 2., 1., 0.01

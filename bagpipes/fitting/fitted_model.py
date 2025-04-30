@@ -125,6 +125,11 @@ class fitted_model(object):
             self.K_ind = -0.5*np.sum(log_error_factors)
             self.inv_sigma_sq_ind = 1./self.galaxy.indices[:, 1]**2
 
+        if self.galaxy.lineflux_list is not None:
+            log_error_factors = np.log(2*np.pi*self.galaxy.linefluxes[:, 1]**2)
+            self.K_emline = -0.5*np.sum(log_error_factors)
+            self.inv_sigma_sq_emline = 1./self.galaxy.linefluxes[:, 1]**2
+
     def lnlike(self, x, ndim=0, nparam=0):
         """ Returns the log-likelihood for a given parameter vector. """
 
@@ -159,6 +164,9 @@ class fitted_model(object):
 
         if self.galaxy.index_list is not None:
             lnlike += self._lnlike_indices()
+
+        if self.galaxy.lineflux_list is not None:
+            lnlike += self._lnlike_linefluxes()    
 
         # Return zero likelihood if lnlike = nan (something went wrong).
         if np.isnan(lnlike):
@@ -247,6 +255,18 @@ class fitted_model(object):
         self.chisq_ind = np.sum(diff*self.inv_sigma_sq_ind)
 
         return self.K_ind - 0.5*self.chisq_ind
+    
+
+    def _lnlike_linefluxes(self):
+        """ Calculates the log-likelihood for emission line fluxes. """
+        diff = np.zeros(len(self.galaxy.lineflux_list))
+        for i in diff.shape[0]: # loop over all the emission lines we want to fit
+            lineName = self.galaxy.lineflux_list[i]
+            diff[i] = (self.galaxy.linefluxes[i, 0] - self.model_galaxy.line_fluxes[lineName])**2
+        self.chisq_emline = np.sum(diff*self.inv_sigma_sq_emline)
+
+        return self.K_emline - 0.5*self.chisq_emline
+
 
     def _update_model_components(self, param):
         """ Generates a model object with the current parameters. """

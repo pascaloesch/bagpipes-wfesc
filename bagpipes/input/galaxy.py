@@ -69,13 +69,22 @@ class galaxy:
         user requests the code to calculate spectral indices from the
         observed spectrum.
 
+    lineflux_list : list - optional
+        list of emission lines to fit, e.g. 'H  1  1215.67A'
+        see full list of possible lines in cloudy_lines.txt
+
+    load_linefluxes : function or str - optional
+        Load catalog of emission lines for the lineflux_list and 
+        associated uncertainties.
+
 
     """
 
     def __init__(self, ID, load_data, spec_units="ergscma", phot_units="mujy",
                  spectrum_exists=True, photometry_exists=True, filt_list=None,
                  out_units="ergscma", load_indices=None, index_list=None,
-                 index_redshift=None, input_spec_cov_matrix=False):
+                 index_redshift=None, input_spec_cov_matrix=False, 
+                 load_linefluxes=None, lineflux_list=None):
 
         self.ID = str(ID)
         self.phot_units = phot_units
@@ -87,6 +96,7 @@ class galaxy:
         self.spec_wavs = None
         self.index_list = index_list
         self.index_redshift = index_redshift
+        self.lineflux_list = lineflux_list
 
         # Attempt to load the data from the load_data function.
         try:
@@ -163,6 +173,11 @@ class galaxy:
                     self.indices[i] = measure_index(self.index_list[i],
                                                     self.spectrum,
                                                     self.index_redshift)
+        
+        # load emission line fluxes
+        if load_linefluxes is not None:
+            self.linefluxes = load_linefluxes(self.ID) 
+            # this should produce an array of [flux, flux_err] for each line
 
     def _convert_units(self):
         """ Convert between ergs s^-1 cm^-2 A^-1 and microjanskys if
