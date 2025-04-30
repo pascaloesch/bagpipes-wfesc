@@ -401,9 +401,11 @@ class model_galaxy(object):
             em_lines += self.nebular.line_fluxes(grid, t_bc,
                                                  model_comp["nebular"]["logU"])
 
-            # The non-escaping stellar emission below 912A goes into nebular emission
+            
+            # keep a copy of original BC spectrum for later (i.e. fesc=100%)
             spectrum_bc_f100 = 1.0*spectrum_bc
             
+            # add nebular emission to the BC spectrum for the part with 0 escape fraction
             spectrum_bc[self.wavelengths < 912.] *= 0.0
             spectrum_bc += self.nebular.spectrum(grid, t_bc,
                                                  model_comp["nebular"]["logU"])
@@ -420,7 +422,7 @@ class model_galaxy(object):
                 bc_trans_red = 10**(-bc_Av_reduced*self.dust_atten.A_cont/2.5)
                 spectrum_bc_dust = spectrum_bc*bc_trans_red
                 dust_flux += np.trapz(spectrum_bc - spectrum_bc_dust,
-                                      x=self.wavelengths)
+                                      x=self.wavelengths) * (1.0-fesc)
 
                 spectrum_bc = spectrum_bc_dust
             else:
@@ -429,7 +431,8 @@ class model_galaxy(object):
             bc_Av = eta*model_comp["dust"]["Av"]
             em_lines *= 10**(-bc_Av*self.dust_atten.A_line/2.5)
 
-        em_lines = em_lines*(1-fesc)  # Add birth cloud emission lines to emission lines.
+        # keeping track of fesc on emission line fluxes before (potentially) adding diffuse dust
+        em_lines = em_lines * (1.0-fesc)
 
         # Add attenuation due to the diffuse ISM.
         if self.dust_atten:
@@ -438,10 +441,11 @@ class model_galaxy(object):
             dust_spectrum_bc = spectrum_bc*trans
 
             dust_flux += np.trapz(spectrum - dust_spectrum, x=self.wavelengths)
+            dust_flux += np.trapz(spectrum_bc - dust_spectrum_bc, x=self.wavelengths) * (1.0 - fesc)
 
             spectrum = dust_spectrum + dust_spectrum_bc*(1.0-fesc) + spectrum_bc_f100*fesc
 
-            self.spectrum_bc = spectrum_bc*trans
+            self.spectrum_bc = (spectrum_bc*trans) * (1.0-fesc) + spectrum_bc_f100*fesc
 
 
             # Add dust emission.
@@ -457,6 +461,10 @@ class model_galaxy(object):
 
             spectrum += dust_flux*self.dust_emission.spectrum(qpah, umin,
                                                               gamma)
+        
+        else: # if no diffuse dust is added, just add birth cloud spectrum to spectrum.
+            spectrum += spectrum_bc*(1.0-fesc) + spectrum_bc_f100*fesc 
+
 
         spectrum *= self.igm.trans(model_comp["redshift"])
 
