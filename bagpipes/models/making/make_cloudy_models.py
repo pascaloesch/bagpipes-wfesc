@@ -165,7 +165,7 @@ def make_cloudy_input_file(age, zmet, logU, path):
     f.write("Q(H) = " + str("%.3f" % logQ) + " log\n")
     f.write("radius 19.000 log\n")
     f.write("abundances old solar 84\n")
-    f.write("grains ISM\n")
+    f.write("## grains ISM\n") # commented out this to turn off dust
     f.write("metals grains " + "%.3f" % zmet + "\n")
 
     # Nitrogen abundances, -0.22 is the depletion factor, the final term
