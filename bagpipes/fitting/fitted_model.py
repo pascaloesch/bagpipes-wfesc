@@ -260,7 +260,7 @@ class fitted_model(object):
     def _lnlike_linefluxes(self):
         """ Calculates the log-likelihood for emission line fluxes. """
         diff = np.zeros(len(self.galaxy.lineflux_list))
-        for i in diff.shape[0]: # loop over all the emission lines we want to fit
+        for i in range(diff.shape[0]): # loop over all the emission lines we want to fit
             lineName = self.galaxy.lineflux_list[i]
             diff[i] = (self.galaxy.linefluxes[i, 0] - self.model_galaxy.line_fluxes[lineName])**2
         self.chisq_emline = np.sum(diff*self.inv_sigma_sq_emline)

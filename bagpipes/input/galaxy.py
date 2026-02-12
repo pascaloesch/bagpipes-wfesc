@@ -175,9 +175,21 @@ class galaxy:
                                                     self.index_redshift)
         
         # load emission line fluxes
+        if self.lineflux_list is not None and load_linefluxes is None:
+            raise ValueError("Bagpipes: lineflux_list was provided but "
+                             "load_linefluxes was not. Please provide a "
+                             "function to load emission line fluxes.")
+
         if load_linefluxes is not None:
-            self.linefluxes = load_linefluxes(self.ID) 
+            self.linefluxes = load_linefluxes(self.ID)
             # this should produce an array of [flux, flux_err] for each line
+
+            expected = (len(self.lineflux_list), 2)
+            if self.linefluxes.shape != expected:
+                raise ValueError("Bagpipes: load_linefluxes should return an "
+                                 "array with shape " + str(expected) + " "
+                                 "(one row per line with [flux, flux_err]), "
+                                 "got " + str(self.linefluxes.shape) + ".")
 
     def _convert_units(self):
         """ Convert between ergs s^-1 cm^-2 A^-1 and microjanskys if

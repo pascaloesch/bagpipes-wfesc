@@ -133,17 +133,33 @@ try:
     # neb_cont_file = "bpass_2.2.1_bin_imf135_300_nebular_cont_grids.fits"
     # neb_line_file = "bpass_2.2.1_bin_imf135_300_nebular_line_grids.fits"
     
-    print(' ** using new cloudy grids with no dust, fixes recombination line luminosities at highZ and logU')
-    neb_cont_file = "bpass_2.2.1_bin_imf135_300_nebular_cont_grids_nodust.fits"
-    neb_line_file = "bpass_2.2.1_bin_imf135_300_nebular_line_grids_nodust.fits"
+    # print(' ** using new cloudy grids with no dust, fixes recombination line luminosities at highZ and logU')
+    # neb_cont_file = "bpass_2.2.1_bin_imf135_300_nebular_cont_grids_nodust.fits"
+    # neb_line_file = "bpass_2.2.1_bin_imf135_300_nebular_line_grids_nodust.fits"
 
+
+    # # Names for the emission features to be tracked.
+    # line_names = np.loadtxt(grid_dir + "/cloudy_lines.txt",
+    #                         dtype="str", delimiter="}")
+
+    # # Wavelengths of these emission features in Angstroms.
+    # line_wavs = np.loadtxt(grid_dir + "/cloudy_linewavs.txt")
+
+    print(' ** using new cloudy grids with no dust, fixes recombination line luminosities at highZ and logU')
+    # print(' ** using hden2p5, logU=(-4,0.5,0), and extended emission line list, plus vacuum wavelengths')
+    # neb_cont_file = "bpass_2.2.1_bin_imf135_300_nebular_cont_grids_nodust_hden2p5_logUm4to0_extLines.fits"
+    # neb_line_file = "bpass_2.2.1_bin_imf135_300_nebular_line_grids_nodust_hden2p5_logUm4to0_extLines.fits"
+
+    print(' ** using hden=3.0, logU=(-4,0.5,0), and extended emission line list, plus vacuum wavelengths')
+    neb_cont_file = "bpass_2.2.1_bin_imf135_300_nebular_cont_grids_nodust_hden3_logUm4to0_extLines.fits"
+    neb_line_file = "bpass_2.2.1_bin_imf135_300_nebular_line_grids_nodust_hden3_logUm4to0_extLines.fits"
 
     # Names for the emission features to be tracked.
-    line_names = np.loadtxt(grid_dir + "/cloudy_lines.txt",
+    line_names = np.loadtxt(grid_dir + "/cloudy_lines_ext.txt",
                             dtype="str", delimiter="}")
 
     # Wavelengths of these emission features in Angstroms.
-    line_wavs = np.loadtxt(grid_dir + "/cloudy_linewavs.txt")
+    line_wavs = np.loadtxt(grid_dir + "/cloudy_linewavs_ext.txt")
 
     # Ages for the nebular emission grids.
     neb_ages = fits.open(grid_dir
@@ -154,15 +170,27 @@ try:
 
     # LogU values for the nebular emission grids.
     #logU = np.arange(-4., -1.99, 0.5)
-    logU = np.arange(-4., -0.99, 0.5) ## expand grid up to logU=-1
+    logU = np.arange(-4., 0.01, 0.5) ## expand grid up to logU=0
 
     # Grid of line fluxes.
-    line_grid = [fits.open(grid_dir + "/" + neb_line_file)[i].data for
+    # line_grid = [fits.open(grid_dir + "/" + neb_line_file)[i].data for
+    #              i in range(len(metallicities) * len(logU) + 1)]
+    # safer way that also closes
+    line_hdu = fits.open(grid_dir + "/" + neb_line_file)
+    line_grid = [line_hdu[i].data for
                  i in range(len(metallicities) * len(logU) + 1)]
+    line_hdu.close()
+    
 
     # Grid of nebular continuum fluxes.
-    cont_grid = [fits.open(grid_dir + "/" + neb_cont_file)[i].data for
-                 i in range(len(metallicities) * len(logU) + 1)]
+    # cont_grid = [fits.open(grid_dir + "/" + neb_cont_file)[i].data for
+    #              i in range(len(metallicities) * len(logU) + 1)]
+
+    cont_hdu = fits.open(grid_dir + "/" + neb_cont_file)
+    cont_grid = [cont_hdu[i].data for
+                  i in range(len(metallicities) * len(logU) + 1)]
+    cont_hdu.close()
+
 
 except IOError:
     print("Failed to load nebular grids, these should be placed in the"
@@ -183,13 +211,26 @@ try:
                           2.37, 2.50, 3.19, 3.90, 4.58])
 
     # Draine + Li (2007) dust emission grids, stored as a FITS HDUList.
+    # dust_grid_umin_only = [
+    #     fits.open(grid_dir + "/dl07_grids_umin_only.fits")[i].data for i
+    #     in range(len(qpah_vals) + 1)]
+    dust_hdu = fits.open(grid_dir + "/dl07_grids_umin_only.fits")
     dust_grid_umin_only = [
-        fits.open(grid_dir + "/dl07_grids_umin_only.fits")[i].data for i
+        dust_hdu[i].data for i
         in range(len(qpah_vals) + 1)]
+    dust_hdu.close()
 
+
+    # dust_grid_umin_umax = [
+    #     fits.open(grid_dir + "/dl07_grids_umin_umax.fits")[i].data for i
+    #     in range(len(qpah_vals) + 1)]
+    dust_hdu2 = fits.open(grid_dir + "/dl07_grids_umin_umax.fits")
     dust_grid_umin_umax = [
-        fits.open(grid_dir + "/dl07_grids_umin_umax.fits")[i].data for i
+        dust_hdu2[i].data for i
         in range(len(qpah_vals) + 1)]
+    dust_hdu2.close()
+    
+
 
 except IOError:
     print("Failed to load dust emission grids, these should be placed in the"
@@ -223,7 +264,9 @@ else:
             igm_inoue2014.make_table(igm_redshifts, igm_wavelengths)
 
 # 2D numpy array containing the IGM attenuation grid.
-raw_igm_grid = fits.open(grid_dir + "/d_igm_grid_inoue14.fits")[1].data
+# raw_igm_grid = fits.open(grid_dir + "/d_igm_grid_inoue14.fits")[1].data
+with fits.open(grid_dir + "/d_igm_grid_inoue14.fits") as hdul:
+    raw_igm_grid = hdul[1].data
 
 
 """ These variables are alternatives to those given in the stellar

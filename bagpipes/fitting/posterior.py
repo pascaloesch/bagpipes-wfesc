@@ -179,6 +179,11 @@ class posterior(object):
         if self.galaxy.photometry_exists:
             self.samples["chisq_phot"] = np.zeros(self.n_samples)
 
+        if self.galaxy.lineflux_list is not None:
+            self.samples["chisq_emline"] = np.zeros(self.n_samples)
+            n_lines = len(self.galaxy.lineflux_list)
+            self.samples["line_fluxes"] = np.zeros((self.n_samples, n_lines))
+
         if "dust" in list(self.fitted_model.model_components):
             size = self.model_galaxy.spectrum_full.shape[0]
             self.samples["dust_curve"] = np.zeros((self.n_samples, size))
@@ -200,6 +205,12 @@ class posterior(object):
 
             if self.galaxy.photometry_exists:
                 self.samples["chisq_phot"][i] = self.fitted_model.chisq_phot
+
+            if self.galaxy.lineflux_list is not None:
+                self.samples["chisq_emline"][i] = self.fitted_model.chisq_emline
+                for j, name in enumerate(self.galaxy.lineflux_list):
+                    self.samples["line_fluxes"][i, j] = \
+                        self.fitted_model.model_galaxy.line_fluxes[name]
 
             if "dust" in list(self.fitted_model.model_components):
                 dust_curve = self.fitted_model.model_galaxy.dust_atten.A_cont
