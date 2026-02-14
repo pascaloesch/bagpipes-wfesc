@@ -11,6 +11,7 @@ except RuntimeError:
 
 from .general import *
 from .plot_galaxy import plot_galaxy
+from .. import config
 
 
 def plot_spectrum_posterior(fit, show=False, save=True):
@@ -20,14 +21,24 @@ def plot_spectrum_posterior(fit, show=False, save=True):
 
     update_rcParams()
 
-    # First plot the observational data
+    # First plot the observational data (including lineflux panel if present)
     fig, ax, y_scale = plot_galaxy(fit.galaxy, show=False, return_y_scale=True)
 
+    # Determine which axis corresponds to which panel.
+    ax_idx = 0
+
     if fit.galaxy.spectrum_exists:
-        add_spectrum_posterior(fit, ax[0], zorder=6, y_scale=y_scale[0])
+        add_spectrum_posterior(fit, ax[ax_idx], zorder=6, y_scale=y_scale[ax_idx])
+        ax_idx += 1
 
     if fit.galaxy.photometry_exists:
-        add_photometry_posterior(fit, ax[-1], zorder=2, y_scale=y_scale[-1])
+        add_photometry_posterior(fit, ax[ax_idx], zorder=2,
+                                y_scale=y_scale[ax_idx])
+        ax_idx += 1
+
+    # Overlay posterior on the lineflux panel created by plot_galaxy.
+    if fit.galaxy.lineflux_list is not None:
+        add_lineflux_posterior(fit, ax[ax_idx], zorder=2, y_scale=y_scale[ax_idx])
 
     if save:
         plotpath = "pipes/plots/" + fit.run + "/" + fit.galaxy.ID + "_fit.pdf"
@@ -122,3 +133,58 @@ def add_spectrum_posterior(fit, ax, zorder=4, y_scale=None):
     ax.plot(wavs, post[:, 1], color="sandybrown", zorder=zorder, lw=1.5)
     ax.fill_between(wavs, post[:, 0], post[:, 2], color="sandybrown",
                     zorder=zorder, alpha=0.75, linewidth=0)
+
+
+def add_lineflux_posterior(fit, ax, zorder=4, y_scale=None,
+                            color=None, label=None):
+    """ Add observed and posterior emission line fluxes to axes.
+
+    Plots observed line fluxes as data points with error bars and
+    posterior model predictions as scatter clouds, analogous to
+    add_photometry_posterior. """
+
+    if color is None:
+        color = "darkorange"
+
+    n_lines = len(fit.galaxy.lineflux_list)
+
+    # Look up rest-frame wavelengths for each fitted emission line.
+    line_wavs = np.zeros(n_lines)
+    for i, name in enumerate(fit.galaxy.lineflux_list):
+        idx = np.where(config.line_names == name)[0][0]
+        line_wavs[i] = config.line_wavs[idx]
+
+
+    #log rest-frame wavelengths
+    log_rf_wavs = np.log10(line_wavs)
+
+    # Observed line fluxes and errors.
+    obs_fluxes = fit.galaxy.linefluxes[:, 0]
+    obs_errors = fit.galaxy.linefluxes[:, 1]
+
+    # Determine y-scale.
+    mask = (obs_fluxes > 0.)
+    upper_lims = obs_fluxes + obs_errors
+    if np.any(mask):
+        ymax = 1.05*np.max(upper_lims[mask])
+    else:
+        ymax = 1.05*np.max(upper_lims)
+
+    if y_scale is None:
+        y_scale = float(int(np.log10(ymax)) - 1)
+
+
+    # Plot posterior line flux samples (1-sigma scatter cloud).
+    line_post = np.percentile(fit.posterior.samples["line_fluxes"],
+                              (16, 84), axis=0).T 
+
+    for j in range(n_lines):
+        line_samples = fit.posterior.samples["line_fluxes"][:, j]
+        post_mask = ((line_samples > line_post[j, 0])
+                     & (line_samples < line_post[j, 1]))
+        line_1sig = line_samples[post_mask]*10**-y_scale
+        wav_array = np.zeros(line_1sig.shape[0]) + log_rf_wavs[j]
+
+        if line_1sig.shape[0] > 0:
+            ax.scatter(wav_array, line_1sig, color=color,
+                       zorder=zorder, alpha=0.05, s=100, rasterized=True)
