@@ -180,8 +180,13 @@ class galaxy:
                              "load_linefluxes was not. Please provide a "
                              "function to load emission line fluxes.")
 
+        if load_linefluxes is not None and self.lineflux_list is None:
+            raise ValueError("Bagpipes: load_linefluxes was provided but "
+                             "lineflux_list was not. Please provide a list "
+                             "of emission lines to fit.")
+
         if load_linefluxes is not None:
-            self.linefluxes = load_linefluxes(self.ID)
+            self.linefluxes = load_linefluxes(self.ID, lineflux_list = self.lineflux_list)
             # this should produce an array of [flux, flux_err] for each line
 
             expected = (len(self.lineflux_list), 2)
