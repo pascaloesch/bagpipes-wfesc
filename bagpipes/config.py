@@ -18,7 +18,7 @@ negatively affects one or both of these things. """
 """ These variables control the wavelength sampling for models. """
 
 # Sets the maximum redshift the code is set up to calculate models for.
-max_redshift = 10.
+max_redshift = 20.
 
 # Sets the R = lambda/dlambda value for spectroscopic outputs.
 R_spec = 1000.
@@ -59,10 +59,12 @@ models, as well as some of their basic properties. """
 
 try:
     # Name of the fits file storing the stellar models
-    stellar_file = "bc03_miles_stellar_grids.fits"
+    stellar_file = "bpass_2.2.1_bin_imf135_300_stellar_grids.fits"
 
     # The metallicities of the stellar grids in units of Z_Solar
-    metallicities = np.array([0.005, 0.02, 0.2, 0.4, 1., 2.5, 5.])
+    metallicities = np.array([10**-5, 10**-4, 0.001, 0.002, 0.003, 0.004,
+                              0.006, 0.008, 0.010, 0.014, 0.020, 0.030,
+                              0.040])/0.02
 
     # The wavelengths of the grid points in Angstroms
     wavelengths = fits.open(grid_dir + "/" + stellar_file)[-1].data
@@ -72,7 +74,8 @@ try:
 
     # The fraction of stellar mass still living (1 - return fraction).
     # Axis 0 runs over metallicity, axis 1 runs over age.
-    live_frac = fits.open(grid_dir + "/" + stellar_file)[-3].data[:, 1:]
+    # The BPASS grids do not have the extra leading column of the BC03 grids.
+    live_frac = fits.open(grid_dir + "/" + stellar_file)[-3].data
 
     # The raw stellar grids, stored as a FITS HDUList.
     # The different HDUs are the grids at different metallicities.
@@ -103,16 +106,17 @@ models, as well as some of their basic properties. """
 logU = np.arange(-4., 0.01, 0.5)
 
 # Names of files containing the nebular grids.
-neb_cont_file = "bc03_miles_nebular_cont_grids_extended_logU_nograins_cloudy25.fits"
-neb_line_file = "bc03_miles_nebular_line_grids_extended_logU_nograins_cloudy25.fits"
+# BPASS-based grids, hden=3.0, no grains, extended emission line list.
+neb_cont_file = "bpass_2.2.1_bin_imf135_300_nebular_cont_grids_nodust_hden3_logUm4to0_extLines.fits"
+neb_line_file = "bpass_2.2.1_bin_imf135_300_nebular_line_grids_nodust_hden3_logUm4to0_extLines.fits"
 
 try:
     # Names for the emission features to be tracked.
-    line_names = np.loadtxt(grid_dir + "/cloudy_lines.txt",
+    line_names = np.loadtxt(grid_dir + "/cloudy_lines_ext.txt",
                             dtype="str", delimiter="}")
 
     # Wavelengths of these emission features in Angstroms.
-    line_wavs = np.loadtxt(grid_dir + "/cloudy_linewavs.txt")
+    line_wavs = np.loadtxt(grid_dir + "/cloudy_linewavs_ext.txt")
 
     # Ages for the nebular emission grids.
     neb_ages = fits.open(grid_dir
