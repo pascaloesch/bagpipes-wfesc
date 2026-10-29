@@ -91,6 +91,18 @@ def test_check_line_fluxes_unknown_label():
                    "not in config.line_names")
 
 
+def test_check_line_fluxes_no_lines():
+    gal = _make_galaxy([], np.zeros((0, 2)))
+    gal.ID = "1"
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        gal._check_line_fluxes()
+
+    assert any("no lines" in str(x.message) for x in w)
+    assert gal.line_labels is None and gal.line_fluxes is None
+
+
 def test_check_line_fluxes_bad_errors():
     _assert_raises(_make_galaxy([HA], np.array([[1e-18, 0.]])), "> 0")
 

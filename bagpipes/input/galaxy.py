@@ -2,6 +2,7 @@ from __future__ import print_function, division, absolute_import
 
 import numpy as np
 import os
+import warnings
 
 from .. import config
 from .. import plotting
@@ -186,6 +187,15 @@ class galaxy:
 
         self.line_labels = list(self.line_labels)
         self.line_fluxes = np.array(self.line_fluxes, dtype=float)
+
+        # Nothing left to fit, e.g. no lines measured for this object.
+        if len(self.line_labels) == 0:
+            warnings.warn("Bagpipes: load_line_fluxes returned no lines for "
+                          "object " + self.ID + ", line fluxes will not be "
+                          "fitted.")
+            self.line_labels = None
+            self.line_fluxes = None
+            return
 
         expected = (len(self.line_labels), 2)
         if self.line_fluxes.shape != expected:
