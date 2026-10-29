@@ -8,10 +8,14 @@ here = path.abspath(path.dirname(__file__))
 with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
+# Get the version from bagpipes/__init__.py without importing the package
+with open(path.join(here, 'bagpipes', '__init__.py'), encoding='utf-8') as f:
+    version = [l.split('"')[1] for l in f if l.startswith('__version__')][0]
+
 setup(
     name='bagpipes',
 
-    version='1.3.6+wfesc',
+    version=version,
 
     description='Galaxy spectral fitting',
 

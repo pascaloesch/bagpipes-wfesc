@@ -1,5 +1,7 @@
 from __future__ import print_function, division, absolute_import
 
+__version__ = "1.3.6+wfesc"
+
 from . import models
 from . import fitting
 from . import filters
