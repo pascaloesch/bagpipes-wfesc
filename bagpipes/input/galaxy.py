@@ -3,6 +3,7 @@ from __future__ import print_function, division, absolute_import
 import numpy as np
 import os
 
+from .. import config
 from .. import plotting
 from .. import filters
 
@@ -56,9 +57,11 @@ class galaxy:
 
     load_line_fluxes : function - optional
         Load observed line fluxes for a galaxy. The function should
-        return a list of line labels in Cloudy format, as well as an
-        array with a column of flux values in erg/s/cm^2/AA and a column
-        of corresponding uncertainties in the same units. It is not
+        return a list of line labels in Cloudy format (see
+        bagpipes/models/grids/cloudy_lines_ext.txt), as well as an
+        array of shape (n_lines, 2) with a column of integrated flux
+        values in erg/s/cm^2 and a column of corresponding uncertainties
+        in the same units. It is not
         recommended to use this functionality at the same time as loading
         and fitting observed spectroscopic data with the code.
 
@@ -161,6 +164,7 @@ class galaxy:
         # Deal with loading any emission line fluxes
         if load_line_fluxes is not None:
             self.line_labels, self.line_fluxes = load_line_fluxes(self.ID)
+            self._check_line_fluxes()
 
         # Deal with any spectral index calculations.
         if load_indices is not None:
@@ -175,6 +179,31 @@ class galaxy:
                     self.indices[i] = measure_index(self.index_list[i],
                                                     self.spectrum,
                                                     self.index_redshift)
+
+    def _check_line_fluxes(self):
+        """ Checks the output of load_line_fluxes is in the right format
+        and that all requested lines are available in the models. """
+
+        self.line_labels = list(self.line_labels)
+        self.line_fluxes = np.array(self.line_fluxes, dtype=float)
+
+        expected = (len(self.line_labels), 2)
+        if self.line_fluxes.shape != expected:
+            raise ValueError("Bagpipes: load_line_fluxes should return an "
+                             "array with shape " + str(expected) + " (one "
+                             "row per line with [flux, flux_err]), got "
+                             + str(self.line_fluxes.shape) + ".")
+
+        unknown = [l for l in self.line_labels if l not in config.line_names]
+        if len(unknown) > 0:
+            raise ValueError("Bagpipes: line labels " + str(unknown)
+                             + " returned by load_line_fluxes are not in "
+                             "config.line_names. Check the exact Cloudy "
+                             "format, e.g. 'H  1  6562.81A'.")
+
+        if not np.all(self.line_fluxes[:, 1] > 0.):
+            raise ValueError("Bagpipes: all line flux uncertainties "
+                             "returned by load_line_fluxes must be > 0.")
 
     def _convert_units(self):
         """ Convert between ergs s^-1 cm^-2 A^-1 and microjanskys if

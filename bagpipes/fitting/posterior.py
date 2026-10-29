@@ -182,6 +182,9 @@ class posterior(object):
         if self.galaxy.photometry_exists:
             self.samples["chisq_phot"] = np.zeros(self.n_samples)
 
+        if self.galaxy.line_labels is not None:
+            self.samples["chisq_emline"] = np.zeros(self.n_samples)
+
         if "dla" in list(self.fitted_model.model_components):
             size = self.model_galaxy.spectrum_full.shape[0]
             self.samples["dla_transmission"] = np.zeros((self.n_samples, size))
@@ -213,6 +216,10 @@ class posterior(object):
 
             if self.galaxy.photometry_exists:
                 self.samples["chisq_phot"][i] = self.fitted_model.chisq_phot
+
+            if self.galaxy.line_labels is not None:
+                chisq_emline = self.fitted_model.chisq_lines
+                self.samples["chisq_emline"][i] = chisq_emline
 
             if "dla" in list(self.fitted_model.model_components):
                 dla_trans = self.fitted_model.model_galaxy.dla_trans
