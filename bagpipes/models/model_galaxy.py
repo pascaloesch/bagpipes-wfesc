@@ -367,7 +367,9 @@ class model_galaxy(object):
                 fesc = model_comp["nebular"]["fesc"]
 
                 if not (0.0 <= fesc <= 1.0):
-                    raise ValueError("fesc must be between 0 and 1.")
+                    warnings.warn("fesc = " + str(fesc) + " is outside the "
+                                  "range 0 to 1, clipping to this range.")
+                    fesc = float(np.clip(fesc, 0.0, 1.0))
 
             if "metallicity" in list(model_comp["nebular"]):
                 nebular_metallicity = model_comp["nebular"]["metallicity"]
@@ -382,7 +384,10 @@ class model_galaxy(object):
             em_lines += self.nebular.line_fluxes(grid, t_bc,
                                                  model_comp["nebular"]["logU"])
 
-            spectrum_bc[self.wavelengths < 912.] *= fesc
+            # All ionising photons in the (1 - fesc) covered part of the
+            # birth clouds are reprocessed into nebular emission. The
+            # escaping fraction is added back via spectrum_bc_f100 below.
+            spectrum_bc[self.wavelengths < 912.] = 0.
             spectrum_bc += self.nebular.spectrum(grid, t_bc,
                                                  model_comp["nebular"]["logU"])
 
