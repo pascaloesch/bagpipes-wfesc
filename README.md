@@ -74,13 +74,41 @@ import warnings
 lineCat = Table.read(LineCatName).to_pandas()
 ERROR_FLOOR = 0.05
 
-# translate line labels from cloudy/bagpipes into catalogue names
-lineDict = {"H  1  6562.81A": "Ha",
+# translate line labels from cloudy/bagpipes into catalogue column suffixes
+# (labels joined with "+" are blends: catalogue flux = sum of the components)
+lineDict = {"H  1  4.05113m": "BrA",
+            "H  1  3.73951m": "PfG",
+            "H  1  3.29607m": "PfD",
+            "H  1  2.62513m": "BrB",
+            "H  1  2.16551m": "BrG",
+            "H  1  1.87510m": "PaA",
+            "H  1  1.28180m": "PaB",
+            "H  1  1.09380m": "PaG",
+            "TOTL  1.08303m": "HeI-1083",  # HeI 10830 triplet, total in model
+            "H  1  1.00493m": "PaD",
+            "S  3  9530.62A+S  3  9068.62A": "SIII",
+            "Blnd  7323.00A+Blnd  7332.00A": "OII-7325",
+            "Ar 3  7135.79A": "ArIII-7138",
+            "S  2  6716.44A+S  2  6730.82A": "SII",
+            "N  2  6583.45A+N  2  6548.05A": "NII",
+            "H  1  6562.81A": "Ha",
+            "O  1  6300.30A+O  1  6363.78A": "OI-6302",
+            "He 1  5875.64A": "HeI-5877",
+            "O  3  5006.84A": "OIII-5007",
+            "O  3  4958.91A": "OIII-4959",
             "H  1  4861.33A": "Hb",
-            "O  3  5006.84A+O  3  4958.91A": "OIII"}  # blended doublet
+            "Blnd  4363.00A": "OIII-4363",
+            "H  1  4340.46A": "Hg",
+            "H  1  4101.73A": "Hd",
+            "H  1  3970.07A": "H7",
+            "Ne 3  3868.76A": "NeIII-3867",
+            "H  1  3889.05A": "H8",
+            "H  1  3835.38A": "H9",
+            "H  1  3797.89A": "H10",
+            "Blnd  3726.00A+Blnd  3729.00A": "OII"}
 
-LINES_TO_FIT = ["H  1  6562.81A", "H  1  4861.33A",
-                "O  3  5006.84A+O  3  4958.91A"]
+# lines we would like to fit (only those found and measured are returned)
+LINES_TO_FIT = list(lineDict)
 
 
 def get_line_fluxes(ID, lineflux_list=LINES_TO_FIT):
@@ -127,6 +155,13 @@ def get_line_fluxes(ID, lineflux_list=LINES_TO_FIT):
 
     return labels, np.array(line_measurements, dtype=float).reshape(-1, 2)
 ```
+
+Notes on the line list (FRESCO catalogue):
+
+- [OIII]5007 and [OIII]4959 are fitted individually here. For catalogues with a single blended [OIII] flux use `"O  3  5006.84A+O  3  4958.91A"` instead, but never the blend together with its components, which would count the same flux twice.
+- H8 (3890 Å) is unresolved from He I 3889 Å, and Hε (3971 Å) is close to [NeIII]3968 Å. If the catalogue fluxes include these, use the blends `"H  1  3889.05A+He 1  3888.63A"` and `"H  1  3970.07A+Ne 3  3967.47A"`.
+- Doublets measured as a single flux (e.g. [SIII], [NII], [SII], [OII]) use blend labels, with the line ratios set by the Cloudy models.
+- Strong lines also contribute to the broadband photometry, so their flux enters the likelihood twice. This is usually fine as the errors are independent, but keep it in mind when interpreting chi-squared values.
 
 ### Outputs
 
