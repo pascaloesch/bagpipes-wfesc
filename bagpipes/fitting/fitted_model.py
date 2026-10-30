@@ -258,8 +258,10 @@ class fitted_model(object):
     def _lnlike_line_fluxes(self):
         """ Calculates the log-likelihood for spectral indices. """
 
-        labels = self.galaxy.line_labels
-        model_line_fluxes = [self.model_galaxy.line_fluxes[l] for l in labels]
+        # Blended lines are compared to the sum of their components.
+        model_fluxes = self.model_galaxy.line_fluxes
+        model_line_fluxes = [sum(model_fluxes[c] for c in comps)
+                             for comps in self.galaxy.line_components]
         model_line_fluxes = np.array(model_line_fluxes)
 
         diff = (self.galaxy.line_fluxes[:, 0] - model_line_fluxes)**2

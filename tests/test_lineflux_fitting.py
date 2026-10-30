@@ -24,6 +24,7 @@ from types import SimpleNamespace
 
 HA = "H  1  6562.81A"
 HB = "H  1  4861.33A"
+OIII = "O  3  5006.84A+O  3  4958.91A"
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -37,7 +38,8 @@ def test_lnlike_line_fluxes():
                            [3.0e-17, 5.0e-18]])
 
     fm = object.__new__(fitted_model)
-    fm.galaxy = SimpleNamespace(line_labels=[HA, HB], line_fluxes=obs_fluxes)
+    fm.galaxy = SimpleNamespace(line_labels=[HA, HB], line_fluxes=obs_fluxes,
+                                line_components=[[HA], [HB]])
     fm.model_galaxy = SimpleNamespace(line_fluxes={HA: 1.1e-16, HB: 2.8e-17})
     fm.K_lines = -0.5*np.sum(np.log(2*np.pi*obs_fluxes[:, 1]**2))
     fm.inv_sigma_sq_lines = 1./obs_fluxes[:, 1]**2
@@ -48,6 +50,25 @@ def test_lnlike_line_fluxes():
                       + (3.0e-17 - 2.8e-17)**2/(5.0e-18)**2)
     np.testing.assert_allclose(fm.chisq_lines, expected_chisq, rtol=1e-10)
     np.testing.assert_allclose(result, fm.K_lines - 0.5*expected_chisq)
+
+
+def test_lnlike_line_fluxes_blend():
+    from bagpipes.fitting.fitted_model import fitted_model
+
+    obs_fluxes = np.array([[4.0e-17, 2.0e-18]])
+    model = {"O  3  5006.84A": 3.0e-17, "O  3  4958.91A": 1.0e-17}
+
+    fm = object.__new__(fitted_model)
+    fm.galaxy = SimpleNamespace(line_labels=[OIII], line_fluxes=obs_fluxes,
+                                line_components=[OIII.split("+")])
+    fm.model_galaxy = SimpleNamespace(line_fluxes=model)
+    fm.K_lines = 0.
+    fm.inv_sigma_sq_lines = 1./obs_fluxes[:, 1]**2
+
+    fm._lnlike_line_fluxes()
+
+    # Model sum equals the observed blended flux
+    np.testing.assert_allclose(fm.chisq_lines, 0., atol=1e-20)
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -78,6 +99,22 @@ def test_check_line_fluxes_good():
 
     assert gal.line_labels == [HA, HB]
     assert isinstance(gal.line_fluxes, np.ndarray)
+
+
+def test_check_line_fluxes_blend():
+    from bagpipes import config
+
+    gal = _make_galaxy([HA, OIII], [[5e-18, 3e-19], [2e-18, 3e-19]])
+    gal._check_line_fluxes()
+
+    assert gal.line_components == [[HA], ["O  3  5006.84A", "O  3  4958.91A"]]
+
+    wavs = [config.line_wavs[config.line_names == c][0]
+            for c in gal.line_components[1]]
+    np.testing.assert_allclose(gal.line_wavs[1], np.mean(wavs))
+
+    _assert_raises(_make_galaxy(["O  3  5006.84A+O  3  4958.90A"],
+                                np.ones((1, 2))), "not in config.line_names")
 
 
 def test_check_line_fluxes_wrong_shape():
@@ -126,7 +163,9 @@ def test_posterior_chisq_emline():
     post.samples2d = np.random.rand(20, 2)
     post.samples = {}
 
-    post.galaxy = SimpleNamespace(line_labels=[HA, HB],
+    post.galaxy = SimpleNamespace(line_labels=[HA, HB, OIII],
+                                  line_components=[[HA], [HB],
+                                                   OIII.split("+")],
                                   photometry_exists=False,
                                   spectrum_exists=False, filt_list=None,
                                   spec_wavs=None, index_list=None,
@@ -160,6 +199,10 @@ def test_posterior_chisq_emline():
     for name in [HA, HB]:
         np.testing.assert_allclose(post.samples["line_fluxes"][name],
                                    model_line_fluxes[name])
+
+    np.testing.assert_allclose(post.samples["line_fluxes"][OIII],
+                               model_line_fluxes["O  3  5006.84A"]
+                               + model_line_fluxes["O  3  4958.91A"])
 
 
 # ──────────────────────────────────────────────────────────────────────

@@ -26,6 +26,8 @@ Observed emission line fluxes can be fitted together with photometry using the u
                           filt_list=filt_list,
                           load_line_fluxes=load_line_fluxes)
 
+Blended lines, e.g. an [OIII]4960,5008 flux measured as a single line, can be fitted by joining the component labels with "+", e.g. ``"O  3  5006.84A+O  3  4958.91A"``. The observed flux is then compared to the sum of the model fluxes of the components.
+
 The posterior then contains ``samples["chisq_emline"]`` as well as ``samples["line_fluxes"]`` (a dict keyed by line label), and ``fit.plot_spectrum_posterior()`` shows an extra panel with the observed and fitted line fluxes.
 
 

@@ -250,6 +250,15 @@ class posterior(object):
 
                 self.samples[q][i] = getattr(self.fitted_model.model_galaxy, q)
 
+        # Add the summed model fluxes of any fitted blended lines.
+        if ("nebular" in list(self.fitted_model.model_components)
+                and self.galaxy.line_labels is not None):
+            line_post = self.samples["line_fluxes"]
+            for label, comps in zip(self.galaxy.line_labels,
+                                    self.galaxy.line_components):
+                if len(comps) > 1:
+                    line_post[label] = sum(line_post[c] for c in comps)
+
     def predict(self, filt_list=None, spec_wavs=None, spec_units="ergscma",
                 phot_units="ergscma", index_list=None):
         """Obtain posterior predictions for new observables not included

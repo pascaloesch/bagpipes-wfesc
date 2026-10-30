@@ -11,7 +11,6 @@ except RuntimeError:
 
 from .general import *
 from .plot_spectrum import add_spectrum
-from .. import config
 
 
 def plot_galaxy(galaxy, show=True, return_y_scale=False, y_scale_spec=None):
@@ -173,11 +172,8 @@ def add_observed_linefluxes(galaxy, ax, zorder=4, y_scale=None, ptsize=40,
     n_lines = len(galaxy.line_labels)
     linefluxes = np.copy(galaxy.line_fluxes)
 
-    # Look up rest-frame wavelengths for each emission line.
-    line_wavs = np.zeros(n_lines)
-    for i, name in enumerate(galaxy.line_labels):
-        idx = np.where(config.line_names == name)[0][0]
-        line_wavs[i] = config.line_wavs[idx]
+    # Rest-frame wavelengths for each emission line (mean for blends).
+    line_wavs = galaxy.line_wavs
 
     log_wavs = np.log10(line_wavs)
 

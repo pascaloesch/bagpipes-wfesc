@@ -62,7 +62,10 @@ class galaxy:
         bagpipes/models/grids/cloudy_lines_ext.txt), as well as an
         array of shape (n_lines, 2) with a column of integrated flux
         values in erg/s/cm^2 and a column of corresponding uncertainties
-        in the same units. It is not
+        in the same units. Blended lines can be given by joining the
+        labels of the components with "+", e.g.
+        "O  3  5006.84A+O  3  4958.91A", in which case they are fitted
+        with the sum of the model fluxes of the components. It is not
         recommended to use this functionality at the same time as loading
         and fitting observed spectroscopic data with the code.
 
@@ -195,6 +198,8 @@ class galaxy:
                           "fitted.")
             self.line_labels = None
             self.line_fluxes = None
+            self.line_components = None
+            self.line_wavs = None
             return
 
         expected = (len(self.line_labels), 2)
@@ -204,7 +209,11 @@ class galaxy:
                              "row per line with [flux, flux_err]), got "
                              + str(self.line_fluxes.shape) + ".")
 
-        unknown = [l for l in self.line_labels if l not in config.line_names]
+        # Blended lines are fitted with the sum of their components.
+        self.line_components = [l.split("+") for l in self.line_labels]
+
+        unknown = [c for comps in self.line_components for c in comps
+                   if c not in config.line_names]
         if len(unknown) > 0:
             raise ValueError("Bagpipes: line labels " + str(unknown)
                              + " returned by load_line_fluxes are not in "
@@ -214,6 +223,11 @@ class galaxy:
         if not np.all(self.line_fluxes[:, 1] > 0.):
             raise ValueError("Bagpipes: all line flux uncertainties "
                              "returned by load_line_fluxes must be > 0.")
+
+        # Rest-frame wavelengths (mean for blends), used for plotting.
+        self.line_wavs = np.array([np.mean([config.line_wavs[
+                                   config.line_names == c][0] for c in comps])
+                                   for comps in self.line_components])
 
     def _convert_units(self):
         """ Convert between ergs s^-1 cm^-2 A^-1 and microjanskys if

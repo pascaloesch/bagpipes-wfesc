@@ -11,7 +11,6 @@ except RuntimeError:
 
 from .general import *
 from .plot_galaxy import plot_galaxy
-from .. import config
 
 
 def plot_spectrum_posterior(fit, show=False, save=True):
@@ -148,11 +147,8 @@ def add_lineflux_posterior(fit, ax, zorder=4, y_scale=None,
 
     n_lines = len(fit.galaxy.line_labels)
 
-    # Look up rest-frame wavelengths for each fitted emission line.
-    line_wavs = np.zeros(n_lines)
-    for i, name in enumerate(fit.galaxy.line_labels):
-        idx = np.where(config.line_names == name)[0][0]
-        line_wavs[i] = config.line_wavs[idx]
+    # Rest-frame wavelengths for each fitted emission line.
+    line_wavs = fit.galaxy.line_wavs
 
 
     #log rest-frame wavelengths
