@@ -232,8 +232,8 @@ def add_observed_linefluxes(galaxy, ax, zorder=4, y_scale=None, ptsize=40,
                       + str(int(y_scale))
                       + "}\\ erg\\ s^{-1}\\ cm^{-2}}$")
 
-        ax.set_xlabel("$\\mathrm{log_{10}}\\big(\\lambda_\\mathrm{rest}"
-                      + " / \\mathrm{\\AA}\\big)$")
+        ax.set_xlabel("$\\mathrm{log_{10}}(\\lambda_\\mathrm{rest}"
+                      + " / \\mathrm{\\AA})$")
 
     else:
         ax.set_ylabel("F_line / 10^" + str(int(y_scale))

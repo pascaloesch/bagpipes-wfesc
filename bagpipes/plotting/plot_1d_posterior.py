@@ -58,7 +58,7 @@ def plot_1d_posterior(fit, fit2=False, show=False, save=True):
                 extra_samples = np.log10(extra_samples)
 
             if tex_on:
-                label = "$\\mathrm{log_{10}}(" + label[1:-1] + ")$"
+                label = "$\\mathrm{log_{10}}(" + label.strip("$") + ")$"
 
             else:
                 label = "log_10(" + label + ")"

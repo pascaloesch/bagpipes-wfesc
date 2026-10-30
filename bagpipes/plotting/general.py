@@ -15,10 +15,10 @@ from scipy.ndimage import gaussian_filter
 
 from .. import utils
 
-tex_on = mpl.rcParams["text.usetex"]
-
-if not tex_on:
-    print("Bagpipes: Latex turned off in rcParams, plots may look strange.")
+# Labels are always written in TeX format. They are rendered with LaTeX
+# if text.usetex is set in rcParams, otherwise with matplotlib mathtext.
+usetex = mpl.rcParams["text.usetex"]
+tex_on = True
 
 
 latex_names = {"redshift": "z",
@@ -33,6 +33,7 @@ latex_names = {"redshift": "z",
                "age_min": "\\mathrm{Min\\ Age}",
                "age_max": "\\mathrm{Max\\ Age}",
                "Av": "{A_V}",
+               "fesc": "{f_\\mathrm{esc}}",
                "n": "n",
                "veldisp": "\\sigma_{vel}",
                "0": "\\mathrm{N}0",
@@ -102,7 +103,7 @@ def update_rcParams():
     mpl.rcParams["ytick.labelsize"] = 14
     mpl.rcParams["ytick.direction"] = "in"
 
-    if tex_on:
+    if usetex:
         mpl.rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']})
 
 
@@ -260,8 +261,8 @@ def auto_axis_label(ax, y_scale, z_non_zero=True, log_x=False):
                           + "}\\ erg\\ s^{-1}\\ \\AA^{-1}}$")
 
         if log_x:
-            ax.set_xlabel("$\\mathrm{log_{10}}\\big(\\lambda / \\mathrm{\\AA}"
-                          + "\\big)$")
+            ax.set_xlabel("$\\mathrm{log_{10}}(\\lambda / \\mathrm{\\AA}"
+                          + ")$")
 
         else:
             ax.set_xlabel("$\\lambda / \\mathrm{\\AA}$")

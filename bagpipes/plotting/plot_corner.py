@@ -33,7 +33,8 @@ def plot_corner(fit, show=False, save=True, bins=25, type="fit_params"):
             samples[:, i] = np.log10(samples[:, i])
 
             if tex_on:
-                labels[i] = "$\\mathrm{log_{10}}(" + labels[i][1:-1] + ")$"
+                labels[i] = ("$\\mathrm{log_{10}}(" + labels[i].strip("$")
+                             + ")$")
 
             else:
                 labels[i] = "log_10(" + labels[i] + ")"
